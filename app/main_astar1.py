@@ -3,9 +3,9 @@ import os
 import random
 import bottle
 import numpy as np
-import math
 
 from api import ping_response, start_response, move_response, end_response
+
 
 # A Star Implementation from: https://medium.com/@nicholas.w.swift/easy-a-star-pathfinding-7e6689c7f7b2
 class Node():
@@ -22,87 +22,7 @@ class Node():
     def __eq__(self, other):
         return self.position == other.position
 
-#Returns the maze filled with zeros
-def returnMaze(data):
-    boardx = data['board']['height']
-    boardy = data['board']['width']
-    maze = np.zeros((boardx,boardy),dtype=int)
-    return maze
 
-#Gives the (int) x and y position of our OWN snake in two lists (x, y)
-def getSelfPos(data):
-    snake = data['you']['body']
-    x = [snakePos['x'] for snakePos in snake]
-    y = [snakePos['y'] for snakePos in snake]
-    return x,y
-
-# return the current head postion of OWN snake in (int) as a tuple
-def getSelfHeadPos(data):
-    xself,yself = getSelfPos(data)
-    x = xself[0]
-    y = yself[0]
-    return (x,y)
-
-#Gives the (int) x and y position of all enemies in a two lists (xx, yy)
-def enemyAllPos(data):
-    numEnemies = enemyCount(data)
-    xx = [] #initializing
-    yy = [] #initializing
-    #looping to find an appended list of x and y coordinates of all enemy snakes
-    for s in range(numEnemies):
-        x,y = enemy1Pos(data,s)
-        xx += x
-        yy += y
-    return xx,yy
-    
-#Gives the x,y as a list of int values of the a snake given 'numSnake' which starts at 0  
-def enemy1Pos(data,numSnake):
-    snake = data['board']['snakes'][numSnake]['body']
-    x = [snakePos['x'] for snakePos in snake]
-    y = [snakePos['y'] for snakePos in snake]
-    return x,y
-    
-#Gives the number of enemies still alive
-def enemyCount(data):
-    numEnemies = sum(1 for enemies in data['board']['snakes'])
-    return numEnemies
-
-#Finding location of fruits
-def fruitLoc(data):
-    snake = data['board']['food']
-    x = [snakePos['x'] for snakePos in snake]
-    y = [snakePos['y'] for snakePos in snake]
-    return x,y
-    
-#Finding nearest fruit to head. Returns position as a tuple (int) x,y
-def closestFruit(data):
-    fx,fy = fruitLoc(data) #getting x,y of all fruits
-    hx,hy = getSelfHeadPos(data) #getting position of head
-    distx = np.array(fx) - hx
-    disty = np.array(fy) - hy
-    distx *= distx #calculating the square
-    disty *= disty #calculating the square
-    dist = distx+disty #calculating distance (without taking sqrt)
-    indexMin = np.argmin(dist) #checked: only returns one index which is good
-    return (fx[indexMin],fy[indexMin])
-    
- #provides the string direction: 'up','down','left','right' from the path
-def returnDirection(path):
-    arrayDirection = np.subtract(path[1],path[0])
-    
-    if (arrayDirection== ([0,-1])).all():
-        direction = 'up'
-    elif (arrayDirection== ([0,1])).all():
-        direction = 'down'
-    elif (arrayDirection== ([-1,0])).all():
-        direction = 'left'
-    elif (arrayDirection== ([1,0])).all():
-        direction = 'right'
-    else:
-        direction = 'right'
-    return direction   
-    
-#A* Algorithm
 def astar(maze, start, end):
     """Returns a list of tuples as a path from the given start to the given end in the given maze"""
 
@@ -232,6 +152,7 @@ def start():
     boardy = data['board']['width']
     print(boardx)
     print(boardy)
+
     color = "#00FF00"
 
     return start_response(color)
@@ -246,42 +167,30 @@ def move():
     TODO: Using the data from the endpoint request object, your
             snake AI must choose a direction to move in.
     """
-    #print(data)
-    #print(data['board']['food'])
-    print('--')
-    numEnemies = enemyCount(data)
-    print(numEnemies)
-    print(data['you'])
-    
+    print(json.dumps(data))
+    print(json.dumps(data['board']['food']))
     
 
     directions = ['up', 'down', 'left', 'right']
-    
-    #obtaining 'maze' for astar
-    maze = returnMaze(data) #obtaining maze (size)
-    enemyXLoc, enemyYLoc = enemyAllPos(data) #obtaing locations of enemies on maze
-    ownXLoc, ownYLoc = getSelfPos(data) #obtaining own snake location on maze
-    maze[enemyXLoc, enemyYLoc] = 1 #marking locations of other snakes on maze
-    maze[ownXLoc, ownYLoc] = 1 #marking self location on maze
-  
-    #obtaining 'start' for astar 
-    start = getSelfHeadPos(data) #using current head location as 'start'
-    
-    #obtaining 'end' for astar 
-    end = closestFruit(data)
-    
-    #calculating astar for the shortest path
+    direction = random.choice(directions)
+    maze = [[0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+
+    start = (0, 0)
+    end = (7, 6)
+
     path = astar(maze, start, end)
-    print('path:')
     print(path)
-    
-    #determining direction
-    direction = (returnDirection(path))
-    print('direction:')
-    print(direction)
-    
     return move_response(direction)
-    
+
 
 @bottle.post('/end')
 def end():
